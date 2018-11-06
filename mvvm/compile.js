@@ -12,7 +12,7 @@ function Compile(el, vm) {
     this.$el = this.isElementNode(el) ? el : document.querySelector(el);
     if (this.$el) {
       // 将所有实际元素转化为元素碎片，操作效率高
-      this.$fragment = document.createDocumentFragment(this.$el);
+      this.$fragment = this.node2Fragment(this.$el);
       // 执行具体变异操作
       this.init();
       // 将碎片还原到实际dom上
@@ -34,14 +34,13 @@ Compile.prototype = {
     // 编译每一个节点，如果是文本节点采用文本编译方式，元素采用元素编译方式，子节点递归下去
     compileElement: function (el) { 
         var childNodes = el.childNodes,
-            self = this;
+            self = this; 
         [].slice.call(childNodes).forEach(function(node) {
             var reg = /\{\{(.*)\}\}/;
             var text = node.textContent; // 获取该节点的文本内容
-            
             if (self.isTextNode(node) && reg.test(text)) { // 判断是否是文本节点
-                self.compileText(node, reg.exec(text)[1]) // reg.exec() 获取到的是匹配到的第一个字段
-            } else if (self.isElementNode) { // 判断是否是元素节点
+                self.compileText(node, trim(RegExp.$1)) // reg.exec() === RegExp.$1获取到的是匹配到的第一个字段
+            } else if (self.isElementNode(node)) { // 判断是否是元素节点
                 self.compile(node);
             }
 
@@ -52,9 +51,9 @@ Compile.prototype = {
     },
     // 编译元素节点
     compile: function (node) {
-        var nodeAttrs = node.attrbutes, // 获取元素属性列表
+        var nodeAttrs = node.attributes, // 获取元素属性列表
             self = this;
-        // 变量元素所有属性节点
+        // 变量元素所有属性节点  
         [].slice.call(nodeAttrs).forEach(function (attr) {
             var attrName = attr.name;
             // 判断属性是否是vue属性
@@ -62,27 +61,27 @@ Compile.prototype = {
                 // 获取属性值
                 var exp = trim(attr.value);
                 // 获取属性的具体含义 html v-if
-                var dir = attrName.subString(2); // 这里获取到的是if
+                var dir = attrName.substring(2); // 这里获取到的是if
                 if (self.isEventDirective(dir)) {// 判断是否是事件指令
                     // 执行事件指令的编译方式
-                    compileUtil.eventHandler(node, self.$vm, dir);
+                    compileUtil.eventHandler(node, self.$vm, exp, dir);
                 } else {
                     // 执行普通指令的编译方式
-                    compileUtil[dir] && compileUitl[dir](node, self.$vm, exp);
+                    compileUtil[dir] && compileUtil[dir](node, self.$vm, exp);
                 }
             }
         })    
     },
     // 编译文本节点 node.nodeType 元素节点返回1；文本节点返回3；属性节点返回2；
-    complieText: function (node, exp) {
+    compileText: function (node, exp) {
         // 采用文本编译包中的指令处理方法
         compileUtil.text(node, this.$vm, exp);
     },
     isDirective: function (attr) { // 判断是否是指令
-        return attr.indexof('v-') == 0
+        return attr.indexOf('v-') == 0
     },
     isEventDirective: function (dir) { // 判断是否是事件指令
-        return dir.indexof('on') === 0;
+        return dir.indexOf('on') === 0;
     },
     isElementNode: function (node) {
         return node.nodeType == 1;
@@ -126,7 +125,6 @@ var compileUtil = {
         var updaterFn = updater[dir + 'Updater'];
         // 利用updater[htmlUpdater]给a元素的内容进行初始化
         updaterFn && updaterFn(node, this._getVMVal(vm, exp));
-
         // 添加观察者实例，一旦有值变化则启动更新函数
         new Watcher(vm, exp, function(value, oldValue) {
             updaterFn && updaterFn(node, value, oldValue);
@@ -162,9 +160,9 @@ var compileUtil = {
         exp.forEach(function(k, i) {
             // 非最后一个key, 更新value值
             if (i < exp.length - 1) {
-                val = val[key];
+                val = val[k];
             } else {
-                val[key] = value;
+                val[k] = value;
             }
         })
     }
@@ -172,8 +170,8 @@ var compileUtil = {
 
 // 指令所对应的更新函数
 var updater = {
-    textHander: function (node, value) {
-        nodex.textContent = typeof value == 'undefined' ? '' : value;
+    textUpdater: function (node, value) {
+        node.textContent = typeof value == 'undefined' ? '' : value;
     },
     htmlUpdater: function (node, value) {
         node.innerHTML = typeof value == 'undefined' ? '' : value;

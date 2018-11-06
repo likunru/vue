@@ -1,27 +1,48 @@
 // 数据绑定的入口
-function Mvvm (options = {}) {
+function MVVM (options) {
   var self = this;
-  this.data = options.data;
-  this.methods = options.methods;
-  object.keys(data).forEach(function (key) {
+  this.$options = options || {};
+  var data = this._data = options.data;
+
+  // 数据代理
+  Object.keys(data).forEach(function (key) {
       self.proxyKeys(key); // 绑定代理属性
   })
-  observe(this.data);
-  new Compile(options.el, this);
-  options.mounted.call(this);
+
+  this._initComputed();
+  // 给每个属性添加setter\getter
+  observe(data, this);
+  //初始化视图，编译挂载的根元素
+  this.$compile = new Compile(options.el || document.body, this);
 }
 
-Mvvm.prototype = {
+MVVM.prototype = {
+    $watch: function (key, cb, options) {
+       new Watcher(this, key, cb);
+    },
     proxyKeys: function (key) {
+        var self = this;
         Object.defineProperty(this, key, {
             enumerable: false,
             configurable: true,
             get: function proxyGetter () {
-                return self.data[key];
+                return self._data[key];
             },
             set: function proxySetter(newVal) {
-                self.data[key] = newVal;
+                self._data[key] = newVal;
             }
         })
+    },
+    _initComputed: function () {
+        var self = this,
+            computed = this.$options.computed;
+        if (typeof computed === 'object') {
+            Object.keys(computed).forEach(function(key) {
+                Object.defineProperty(me, key, {
+                    get: typeof computed[key] === 'function' ? computed[key] : computed[key].get,
+                    set: function () {}
+                })
+            })
+        }    
     }
 }
