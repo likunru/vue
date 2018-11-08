@@ -12,6 +12,8 @@
     <input type="text" v-model="someStr">
     <h1>{{ someStr }}</h1>
     <button v-on:click="changeVm">click me to change vm</button>
+    <br>
+    <h1>{{ testStr }}</h1>
   </div>
 
   <script src="./obServer.js"></script>
@@ -29,13 +31,25 @@
           someStr: 'World !'
         }
       },
+      mounted () {
+        // this.clickBtn();
+        setTimeout(() => {
+            console.log('所有事情都搞定了');
+        }, 1000);
+      },
       methods: {
         clickBtn: function (e) {
           var randomStrArr = ['childOne', 'childTwo', 'childThree'];
           this.child.someStr = randomStrArr[parseInt(Math.random() * 3)];
+          console.log('test mounted', this.child.someStr);
         },
         changeVm: function(e){
           this.someStr = "10086";
+        }
+      },
+      computed: {
+        testStr: function () {
+          return 'adfdsfds';
         }
       }
     });

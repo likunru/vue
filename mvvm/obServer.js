@@ -9,6 +9,7 @@ function observe(data) {
         defineReactive(data, key, data[key]);
     });
 }
+// 使用object.defineProperty进行拦截
 function defineReactive(data, key, val) {
    observe(val); // 遍历所有子属性
    var dep = new Dep();

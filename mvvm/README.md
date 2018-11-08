@@ -1,4 +1,7 @@
 # mvvm
+参考github：https://github.com/yozosann/mvvm-这篇文章。
+
+
 实现简单的数据双向绑定
 单向数据绑定  
 所谓单向数据绑定即model数据改变时通知view改变视图
